@@ -3,29 +3,28 @@ const urlModel = require('../model/urlModel');
 exports.convertUrl = (req, res) => {
     const { originalUrl } = req.body;
     const urlRegex = /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,6}(\/[^\s]*)?$/;
-    if (!originalUrl || originalUrl == undefined || !urlRegex.test(originalUrl)) {
-        return res.status(400).json({ status: false, errors: "Invalid url" });
+
+    if (!originalUrl || !urlRegex.test(originalUrl)) {
+        return res.status(400).json({ status: false, errors: "Invalid URL" });
     }
 
-    const timestamps = Date.now();
-    const parts = originalUrl.split('/');
-    const shortUrl = `http://short/${parts[2]}${timestamps}`;
+    const generateShortUrl = () => `http://short/${Date.now()}`;
 
-    console.log(shortUrl);
-    const createUrl = new urlModel({
-        original_url: originalUrl,
-        short_url: shortUrl
-    });
+    const checkAndSaveUrl = () => {
+        const shortUrl = generateShortUrl();
 
-    createUrl.save()
-        .then(() => {
-            return res.status(200).json({ status: true, message: "Short URL created successfully" });
-        })
-        .catch((err) => {
-            console.error(err);
-            return res.status(500).json({ status: false, errors: "An error occurred while creating the short URL" });
-        });
+        urlModel.findOne({ short_url: shortUrl })
+            .then(existingUrl => existingUrl ? checkAndSaveUrl() : new urlModel({ original_url: originalUrl, short_url: shortUrl }).save())
+            .then(() => res.status(200).json({ status: true, message: "Short URL created successfully", shortUrl }))
+            .catch(err => {
+                console.error(err);
+                res.status(500).json({ status: false, errors: "An error occurred while creating the short URL" });
+            });
+    };
+
+    checkAndSaveUrl();
 };
+
 
 exports.geturl = (req,res) => {
     const id = req.params.shortCode 

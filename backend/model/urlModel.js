@@ -4,7 +4,8 @@ const urlschema = mongoose.Schema({
         type:String
     },
     short_url:{
-        type:String
+        type:String,
+        unique: true, 
     },
     redirect_count:{
         type:Number,
