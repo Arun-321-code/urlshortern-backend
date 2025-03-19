@@ -8,11 +8,15 @@ const urlRoute = require('./router/urlRouter')
 app.use(express.json());
 
 const corsOptions = {
-    origin: true, 
-    methods: ["GET", "POST", "PUT", "DELETE"], 
-    credentials: true, 
-  };
-  
+    origin: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+};
+
+app.get("/", (req, res) => {
+    res.json({ message: "Hello from url shortern" });
+});
+
 app.use(cors(corsOptions))
 app.use('/api',urlRoute );
 

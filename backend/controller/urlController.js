@@ -1,4 +1,5 @@
 const urlModel = require('../model/urlModel');
+const crypto = require('crypto');
 
 exports.convertUrl = (req, res) => {
     const { originalUrl } = req.body;
@@ -8,21 +9,24 @@ exports.convertUrl = (req, res) => {
         return res.status(400).json({ status: false, errors: "Invalid URL" });
     }
 
-    const generateShortUrl = () => `http://short/${Date.now()}`;
+    const salt = crypto.randomBytes(16).toString('hex');
+    const hash = crypto.createHash('sha256').update(originalUrl + salt).digest('hex');
+    const shortUrl = hash.slice(0, 8);
+    const shortern_url = `short.url/${shortUrl}`
+    console.log(shortern_url);
+    const createUrl = new urlModel({
+        original_url: originalUrl,
+        short_url: shortern_url
+    });
 
-    const checkAndSaveUrl = () => {
-        const shortUrl = generateShortUrl();
-
-        urlModel.findOne({ short_url: shortUrl })
-            .then(existingUrl => existingUrl ? checkAndSaveUrl() : new urlModel({ original_url: originalUrl, short_url: shortUrl }).save())
-            .then(() => res.status(200).json({ status: true, message: "Short URL created successfully", shortUrl }))
-            .catch(err => {
-                console.error(err);
-                res.status(500).json({ status: false, errors: "An error occurred while creating the short URL" });
-            });
-    };
-
-    checkAndSaveUrl();
+    createUrl.save()
+        .then(() => {
+            return res.status(200).json({ status: true, message: "Short URL created successfully" });
+        })
+        .catch((err) => {
+            console.error(err);
+            return res.status(500).json({ status: false, errors: "An error occurred while creating the short URL" });
+        });
 };
 
 
